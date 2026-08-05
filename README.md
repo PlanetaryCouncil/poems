@@ -11,9 +11,12 @@ waiting.
 blank line between. That is the canonical form. Marsita, 2026-08-05:
 *"I'd keep just plain text, then frames can be done later in UI."*
 
-`haiku-command-line-poems.json` is the same lines as an array, for
-anything that wants to render or index them. If the two ever disagree,
-the text file wins.
+There is no JSON copy. There was one for about a minute, and it was two
+sources of truth wearing a disclaimer — "if they disagree, the text file
+wins" is a bug you have already written down. Anything that needs
+structure can split the text on blank lines; that is the whole parser:
+
+    poems = [p.splitlines() for p in text.strip().split("\n\n")]
 
 ## Frames are presentation
 
