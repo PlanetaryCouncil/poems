@@ -1,4 +1,6 @@
-# haiku-command-line-poems
+# how these are made
+
+[← the poems](/)
 
 Two-line poems written at the end of terminal replies — one per turn, made
 for the turn it closed, never reused. They mark the end of a message the
