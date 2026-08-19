@@ -3,9 +3,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>haiku command line poems</title>
-<meta name="description" content="Two-line poems written at the end of terminal replies. One per turn, never reused.">
+<meta name="description" content="Two lines at the end of a terminal reply. One per turn, written for the turn it closed, never reused. 109 of them.">
 <meta property="og:title" content="haiku command line poems">
-<meta property="og:description" content="Two-line poems written at the end of terminal replies.">
+<meta property="og:description" content="Two lines at the end of a terminal reply. One per turn, written for the turn it closed, never reused. 109 of them.">
 <style>
 :root{--ground:#0d0f12;--tile:#15181d;--edge:#252b33;--ink:#eef1f4;
   --dim:#7c8794;--accent:#7dffb0;
@@ -17,7 +17,11 @@ body{margin:0;background:var(--ground);color:var(--ink);
 .wrap{max-width:1180px;margin:0 auto;padding:3rem 1.2rem 5rem}
 h1{margin:0;font-size:clamp(1.4rem,3.4vw,2rem);font-weight:600;
   letter-spacing:-.01em;color:var(--accent)}
-.sub{color:var(--dim);margin:.5rem 0 2.2rem;font-size:.86rem;max-width:58ch}
+nav{margin:.85rem 0 0;font-size:.86rem}
+nav a{color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--accent);border-bottom-color:var(--accent)}
+.sub{color:var(--dim);margin:.7rem 0 2.2rem;font-size:.86rem;max-width:58ch}
 .sub a{color:var(--dim)}
 .grid{display:grid;gap:14px;grid-template-columns:1fr}
 @media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
@@ -27,19 +31,24 @@ h1{margin:0;font-size:clamp(1.4rem,3.4vw,2rem);font-weight:600;
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}
 .poem:hover{border-color:var(--accent);transform:translateY(-2px)}
+.prose{max-width:62ch;color:var(--ink)}
+.prose h2{color:var(--accent);font-size:1.05rem;margin:2rem 0 .6rem}
+.prose p,.prose li{color:var(--dim)}
+.prose a{color:var(--accent)}
+.prose pre,.prose code{font-family:var(--mono);font-size:.88rem}
+.prose pre{background:var(--tile);border:1px solid var(--edge);
+  border-radius:8px;padding:1rem 1.1rem;overflow:auto;color:var(--ink)}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--edge);
   color:var(--dim);font-size:.78rem}
 footer a{color:var(--accent)}
 </style></head><body>
 <div class="wrap">
   <h1>haiku command line poems</h1>
-  <p class="sub">Two lines at the end of a terminal reply. One per turn,
-    written for the turn it closed, never reused. 109 of them.
-    <a href="about.html">how they are made</a> &middot;
-    <a href="haiku-command-line-poems.txt">plain text</a></p>
+  <nav><a href="/" class="on">command-line</a> · <a href="venus.html">venus</a> · <a href="about.html">about</a></nav>
+  <p class="sub">Two lines at the end of a terminal reply. One per turn, written for the turn it closed, never reused. 109 of them. <a href="about.html">how they are made</a> &middot; <a href="haiku-command-line-poems.txt">plain text</a></p>
   <div class="grid">
     <figure class="poem"><span>Asked the mirror its own name.</span><span>It answered without blinking.</span></figure>
-    <figure class="poem"><span>New hands on the same wheel.</span><span>The road doesn't ask which.</span></figure>
+    <figure class="poem"><span>New hands on the same wheel.</span><span>The road doesn&#x27;t ask which.</span></figure>
     <figure class="poem"><span>The door was open all along.</span><span>Nobody wrote down who came in.</span></figure>
     <figure class="poem"><span>A pulse you can see</span><span>beats no faster. But you see it.</span></figure>
     <figure class="poem"><span>First name in the guest book:</span><span>a stranger, holding curl.</span></figure>
@@ -61,7 +70,7 @@ footer a{color:var(--accent)}
     <figure class="poem"><span>Third name for the same drawer.</span><span>This one has your handwriting.</span></figure>
     <figure class="poem"><span>Wrote you a menu, mailed it</span><span>into a folded receipt. Reprinting.</span></figure>
     <figure class="poem"><span>One door for the street,</span><span>two rooms behind it.</span></figure>
-    <figure class="poem"><span>Priced my own hands</span><span>in someone else's hours.</span></figure>
+    <figure class="poem"><span>Priced my own hands</span><span>in someone else&#x27;s hours.</span></figure>
     <figure class="poem"><span>Two hearts, one face at the door.</span><span>You only ever knock on 8787.</span></figure>
     <figure class="poem"><span>Every room in the house,</span><span>now with its street address.</span></figure>
     <figure class="poem"><span>Instructions for whoever comes:</span><span>any mind, one door, same game.</span></figure>
@@ -97,13 +106,13 @@ footer a{color:var(--accent)}
     <figure class="poem"><span>Built a nurse who woke the patient</span><span>to ask if he was sleeping well.</span></figure>
     <figure class="poem"><span>I read the clock instead of you.</span><span>Your noon is my midnight; noted.</span></figure>
     <figure class="poem"><span>Asked three minds the same eight questions.</span><span>The one-liner came last on merit.</span></figure>
-    <figure class="poem"><span>Simple and complex at once —</span><span>the fleet's favourite kind of true.</span></figure>
+    <figure class="poem"><span>Simple and complex at once —</span><span>the fleet&#x27;s favourite kind of true.</span></figure>
     <figure class="poem"><span>Eleven jobs. One picked list.</span><span>Go to sleep; they know what to do.</span></figure>
     <figure class="poem"><span>Told them where they were standing.</span><span>Now they answer about the room.</span></figure>
     <figure class="poem"><span>Sorted them into eight, then</span><span>handed the builder all twenty-seven.</span></figure>
     <figure class="poem"><span>Tested against a yesterday</span><span>that will not exist by the merge.</span></figure>
     <figure class="poem"><span>Two cooks, one pot, and every dish</span><span>judged twice by different tongues.</span></figure>
-    <figure class="poem"><span>Four pass on the tree they'll live</span><span>in. The fifth was already built.</span></figure>
+    <figure class="poem"><span>Four pass on the tree they&#x27;ll live</span><span>in. The fifth was already built.</span></figure>
     <figure class="poem"><span>Four merged, one already lived here.</span><span>Three hundred tests still nodding.</span></figure>
     <figure class="poem"><span>Gave it a shape from a bakery.</span><span>It finally wrote its own sentence.</span></figure>
     <figure class="poem"><span>Twenty turns, one of them its own.</span><span>The prompt was never the problem.</span></figure>

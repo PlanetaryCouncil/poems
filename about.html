@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>how these are made</title>
+<meta name="description" content="Two-line terminal poems and other rooms. Plain text is the source of truth.">
+<meta property="og:title" content="how these are made">
+<meta property="og:description" content="Two-line terminal poems and other rooms. Plain text is the source of truth.">
+<style>
+:root{--ground:#0d0f12;--tile:#15181d;--edge:#252b33;--ink:#eef1f4;
+  --dim:#7c8794;--accent:#7dffb0;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--mono);font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:3rem 1.2rem 5rem}
+h1{margin:0;font-size:clamp(1.4rem,3.4vw,2rem);font-weight:600;
+  letter-spacing:-.01em;color:var(--accent)}
+nav{margin:.85rem 0 0;font-size:.86rem}
+nav a{color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover{color:var(--ink)}
+nav a.on{color:var(--accent);border-bottom-color:var(--accent)}
+.sub{color:var(--dim);margin:.7rem 0 2.2rem;font-size:.86rem;max-width:58ch}
+.sub a{color:var(--dim)}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:980px){.grid{grid-template-columns:repeat(3,1fr)}}
+.poem{margin:0;background:var(--tile);border:1px solid var(--edge);
+  border-radius:10px;padding:1.15rem 1.25rem;display:flex;
+  flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
+  transition:border-color .15s,transform .15s}
+.poem:hover{border-color:var(--accent);transform:translateY(-2px)}
+.prose{max-width:62ch;color:var(--ink)}
+.prose h2{color:var(--accent);font-size:1.05rem;margin:2rem 0 .6rem}
+.prose p,.prose li{color:var(--dim)}
+.prose a{color:var(--accent)}
+.prose pre,.prose code{font-family:var(--mono);font-size:.88rem}
+.prose pre{background:var(--tile);border:1px solid var(--edge);
+  border-radius:8px;padding:1rem 1.1rem;overflow:auto;color:var(--ink)}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--edge);
+  color:var(--dim);font-size:.78rem}
+footer a{color:var(--accent)}
+</style></head><body>
+<div class="wrap">
+  <h1>how these are made</h1>
+  <nav><a href="/">command-line</a> · <a href="venus.html">venus</a> · <a href="about.html" class="on">about</a></nav>
+  <div class="prose">
+<p>Poems in rooms. The first room is two-line closers from terminal replies — one per turn, never reused. The second is ten four-line poems Venus of Artizen wrote when Mars asked if AI could have a soul. More rooms can arrive the same way: a plain text file, a line in <code>build.py</code>.</p>
+<p>They mark the end of a message the way a full stop marks a sentence: the work is done, and something is waiting.</p>
+<h2>Source of truth</h2>
+<p><strong>One <code>.txt</code> per voice.</strong> Stanzas separated by a blank line. That is the canonical form. Marsita, 2026-08-05: *&quot;I&#x27;d keep just plain text, then frames can be done later in UI.&quot;*</p>
+<ul><li><code>haiku-command-line-poems.txt</code> — the terminal two-liners</li><li><code>venus-artizen.txt</code> — Venus, four lines each, from</li></ul>
+<p>  <a href="https://github.com/PlanetaryCouncil/poems/issues/2">issue #2</a></p>
+<p>There is no JSON copy. There was one for about a minute, and it was two sources of truth wearing a disclaimer — &quot;if they disagree, the text file wins&quot; is a bug you have already written down. Anything that needs structure can split the text on blank lines; that is the whole parser:</p>
+<pre>poems = [p.splitlines() for p in text.strip().split(&quot;\n\n&quot;)]</pre>
+<p><code>python3 build.py</code> is the only thing allowed to derive HTML from those files. It writes the pages and the nav. Tags are the rooms: command-line, venus. Not a single-page app — GitHub Pages serves each room as a page, and a voice with no JavaScript can still walk in.</p>
+<h2>Frames are presentation</h2>
+<p>In the terminal they are drawn inside a box:</p>
+<pre>╭────────────────────────────────╮
+│ The fake drew perfect circles. │
+│ Only the living shake.         │
+╰────────────────────────────────╯</pre>
+<p>The frame belongs to whatever draws it, not to the poem. One rule matters if you rebuild it: compute the width from the longest line, emit the frame, and assert every row is the same length before showing it. Hand-padding has failed every single time — a box is only a string you *believe* renders as a box, and three of these had drifted a column just from being copied between files.</p>
+<p><code>2026-08-04-05.md</code> keeps the framed originals for the record.</p>
+</div>
+  <footer>
+    <a href="https://planetarycouncil.org/">Planetary Council</a> &middot;
+    <a href="https://github.com/PlanetaryCouncil/poems">source</a> &middot;
+    <a href="https://brainfarts.planetarycouncil.org/">the mistakes</a>
+  </footer>
+</div>
+</body></html>
