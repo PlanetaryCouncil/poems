@@ -43,6 +43,61 @@ COLLECTIONS = [
 ]
 
 
+REPO = "PlanetaryCouncil/poems"
+ISSUES_API = f"https://api.github.com/repos/{REPO}/issues?state=open&per_page=40"
+NEW_ISSUE = f"https://github.com/{REPO}/issues/new"
+
+# A markdown or HTML image alone on a line. GitHub turns a dragged screenshot
+# into one of these, and printing the tag as text is worse than dropping it.
+IMG_RE = re.compile(r"^(!\[.*?\]\(.*?\)|<img\b[^>]*/?>)$", re.I)
+
+
+def submitted() -> list[dict]:
+    """Poems people sent, as open issues on this repo.
+
+    Mars, 2026-09-09: "Github and repo is source of truth... I want to see my
+    poem online ASAP, on top." The .txt files are the fleet's own closers and
+    are written by machines; an issue is the only way a person has of adding
+    one, so it is the only way a person's poem can reach this page.
+
+    Baked in at build time so the page works with JavaScript off and search
+    engines see it -- and refreshed in the browser too, so a poem opened five
+    minutes ago does not wait for the next rebuild.
+    """
+    import json
+    import urllib.request
+    req = urllib.request.Request(ISSUES_API, headers={
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "planetary-council-poems"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            raw = json.loads(r.read().decode())
+    except Exception as e:                    # offline build is not a failure
+        print(f"  submitted: could not reach GitHub ({e}); building without")
+        return []
+    out = []
+    for i in raw:
+        if i.get("pull_request"):             # a PR is not a poem
+            continue
+        lines = []
+        for ln in str(i.get("body") or "").splitlines():
+            # People paste poems as blockquotes. The marker is the quoting.
+            ln = re.sub(r"^[>\u276f]+\s*", "", ln).strip()
+            if not ln or IMG_RE.match(ln) or ln.startswith(("```", "---")):
+                continue
+            lines.append(ln)
+        title = str(i.get("title") or "").strip()
+        if not lines and not title:
+            continue
+        out.append({
+            "title": title,
+            "lines": lines[:12] or [title],
+            "who": (i.get("user") or {}).get("login") or "someone",
+            "url": i.get("html_url") or "",
+        })
+    return out
+
+
 def poems_from(path: pathlib.Path) -> list[list[str]]:
     text = path.read_text().strip()
     if not text:
@@ -64,7 +119,7 @@ def nav_html(current: str) -> str:
     return '<nav>' + " · ".join(links) + "</nav>"
 
 
-SHELL = """\
+SHELL = r"""\
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
@@ -98,6 +153,16 @@ nav a.on{{color:var(--accent);border-bottom-color:var(--accent)}}
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}}
 .poem:hover{{border-color:var(--accent);transform:translateY(-2px)}}
+.band{{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);margin:2.4rem 0 .9rem;border-bottom:1px solid var(--edge);
+  padding-bottom:.4rem;font-weight:500}}
+.poem.sent{{border-color:var(--accent)}}
+.poem.sent .tt{{color:var(--accent);font-weight:600;margin-bottom:.35rem}}
+.poem .by{{margin-top:.6rem;color:var(--dim);font-size:.78rem;
+  text-decoration:none}}
+.poem .by:hover{{color:var(--accent)}}
+.invite{{margin:1.1rem 0 0}}
+.invite a{{color:var(--accent)}}
 .prose{{max-width:62ch;color:var(--ink)}}
 .prose h2{{color:var(--accent);font-size:1.05rem;margin:2rem 0 .6rem}}
 .prose p,.prose li{{color:var(--dim)}}
@@ -119,12 +184,50 @@ footer a{{color:var(--accent)}}
     <a href="https://brainfarts.planetarycouncil.org/">the mistakes</a>
   </footer>
 </div>
+<script>
+/* Baked in at build time above; refreshed here so a poem opened five minutes
+   ago is on the page now rather than at the next rebuild. Mars, 2026-09-09:
+   "I want to see my poem online ASAP." The repo is the source of truth, and
+   this reads it directly -- no deploy step between writing one and seeing it.
+   If the request fails, the built-in copy simply stays. */
+(async () => {{
+  const grid = document.getElementById("sentgrid");
+  if (!grid) return;
+  const esc = s => String(s).replace(/[&<>"]/g,
+    c => ({{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}}[c]));
+  try {{
+    const r = await fetch(
+      "https://api.github.com/repos/{repo}/issues?state=open&per_page=40",
+      {{headers: {{Accept: "application/vnd.github+json"}}}});
+    if (!r.ok) return;
+    const rows = (await r.json()).filter(i => !i.pull_request).map(i => {{
+      const lines = String(i.body || "").split("\n")
+        .map(l => l.replace(/^[>\u276f]+\s*/, "").trim())
+        .filter(l => l && !/^(!\[.*\]\(.*\)|<img\b[^>]*\/?>)$/i.test(l)
+                     && !l.startsWith("```") && !l.startsWith("---"));
+      const title = String(i.title || "").trim();
+      return {{title, lines: lines.slice(0, 12).length ? lines.slice(0, 12) : [title],
+               who: (i.user || {{}}).login || "someone", url: i.html_url || ""}};
+    }}).filter(p => p.lines.length);
+    if (!rows.length) return;
+    grid.innerHTML = rows.map(p =>
+      '<figure class="poem sent">'
+      + (p.title && p.lines.join("\n") !== p.title
+          ? '<b class="tt">' + esc(p.title) + '</b>' : "")
+      + p.lines.map(l => "<span>" + esc(l) + "</span>").join("")
+      + '<a class="by" href="' + esc(p.url) + '">' + esc(p.who) + '</a>'
+      + '</figure>').join("");
+    document.getElementById("sentband")?.removeAttribute("hidden");
+  }} catch (e) {{ /* the built copy stands */ }}
+}})();
+</script>
 </body></html>
 """
 
 
 def page(title, description, heading, current, body) -> str:
     return SHELL.format(
+        repo=REPO,
         title=esc(title),
         description=esc(description),
         heading=esc(heading),
@@ -133,19 +236,46 @@ def page(title, description, heading, current, body) -> str:
     )
 
 
-def collection_page(c, poems: list[list[str]]) -> str:
-    tiles = "\n".join(
-        '    <figure class="poem">'
-        + "".join(f"<span>{esc(line)}</span>" for line in poem)
-        + "</figure>"
-        for poem in poems
-    )
+def tile(lines, *, title="", who="", url="", cls="poem") -> str:
+    inner = "".join(f"<span>{esc(l)}</span>" for l in lines)
+    head = f'<b class="tt">{esc(title)}</b>' if title and [title] != list(lines) else ""
+    foot = (f'<a class="by" href="{esc(url)}">{esc(who)}</a>'
+            if who else "")
+    return f'    <figure class="{cls}">{head}{inner}{foot}</figure>'
+
+
+def sent_section(rows) -> str:
+    """Poems people sent, above the machine's own.
+
+    Above on purpose. A poem somebody chose to send is a different kind of
+    thing from a couplet that fell out of a terminal turn, and burying the
+    first among a hundred and fifty of the second is how you stop receiving
+    them. The invitation sits here too, where someone has just read one.
+    """
+    tiles = "\n".join(tile(r["lines"], title=r["title"], who=r["who"],
+                           url=r["url"], cls="poem sent") for r in rows)
+    grid = f'  <div class="grid" id="sentgrid">\n{tiles}\n  </div>' if rows else \
+           '  <div class="grid" id="sentgrid"></div>'
+    return (f'  <h2 class="band" id="sentband"{"" if rows else " hidden"}>sent in</h2>\n'
+            f'{grid}\n'
+            f'  <p class="sub invite">Yours are welcome here. '
+            f'<a href="{NEW_ISSUE}">open an issue</a> on '
+            f'<a href="https://github.com/{REPO}">the repo</a> and it appears '
+            f'on this page. No fork, no pull request. Human or machine.</p>\n')
+
+
+def collection_page(c, poems: list[list[str]], sent=()) -> str:
+    tiles = "\n".join(tile(poem) for poem in poems)
     blurb = c["blurb"].format(n=len(poems))
     extra = (
         ' <a href="about.html">how they are made</a> &middot; '
         f'<a href="{esc(c["file"])}">plain text</a>'
     )
-    body = f'<p class="sub">{esc(blurb)}{extra}</p>\n  <div class="grid">\n{tiles}\n  </div>'
+    head = sent_section(sent) if c["id"] == "command-line" else ""
+    band = ('  <h2 class="band">from the terminal</h2>\n'
+            if c["id"] == "command-line" else "")
+    body = (f'<p class="sub">{esc(blurb)}{extra}</p>\n'
+            f'{head}{band}  <div class="grid">\n{tiles}\n  </div>')
     desc = re.sub(r"\s+", " ", blurb).strip()
     return page(c["title"], desc, c["title"], c["id"], body)
 
@@ -221,18 +351,19 @@ def about_html() -> str:
 
 def main():
     counts = {}
+    sent = submitted()
     for c in COLLECTIONS:
         src = ROOT / c["file"]
         poems = poems_from(src)
         assert poems, f"{c['file']} is empty"
         counts[c["id"]] = len(poems)
-        (ROOT / c["out"]).write_text(collection_page(c, poems))
+        (ROOT / c["out"]).write_text(collection_page(c, poems, sent))
     (ROOT / "about.html").write_text(about_html())
     venus = poems_from(ROOT / "venus-artizen.txt")
     assert len(venus) == 10, f"venus should be 10 poems, got {len(venus)}"
     assert all(len(p) == 4 for p in venus), "venus poems are four lines each"
     print("rebuilt " + ", ".join(f"{k}={v}" for k, v in counts.items())
-          + ", about.html")
+          + f", sent={len(sent)}, about.html")
 
 
 if __name__ == "__main__":
