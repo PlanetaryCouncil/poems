@@ -87,11 +87,15 @@ def submitted() -> list[dict]:
                 continue
             lines.append(ln)
         title = str(i.get("title") or "").strip()
-        if not lines and not title:
+        # A title with no body is not a poem -- it is an issue about a poem.
+        # "Visual presentation" was a screenshot with a heading, and rendering
+        # it as a two-word tile made the top of the page look broken.
+        # Mars, 2026-09-10: "LOL... skip that one".
+        if not lines:
             continue
         out.append({
             "title": title,
-            "lines": lines[:12] or [title],
+            "lines": lines[:12],
             "who": (i.get("user") or {}).get("login") or "someone",
             "url": i.get("html_url") or "",
         })
@@ -153,9 +157,6 @@ nav a.on{{color:var(--accent);border-bottom-color:var(--accent)}}
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}}
 .poem:hover{{border-color:var(--accent);transform:translateY(-2px)}}
-.band{{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--dim);margin:2.4rem 0 .9rem;border-bottom:1px solid var(--edge);
-  padding-bottom:.4rem;font-weight:500}}
 .poem.sent{{border-color:var(--accent)}}
 .poem.sent .tt{{color:var(--accent);font-weight:600;margin-bottom:.35rem}}
 .poem .by{{margin-top:.6rem;color:var(--dim);font-size:.78rem;
@@ -191,7 +192,7 @@ footer a{{color:var(--accent)}}
    this reads it directly -- no deploy step between writing one and seeing it.
    If the request fails, the built-in copy simply stays. */
 (async () => {{
-  const grid = document.getElementById("sentgrid");
+  const grid = document.getElementById("grid");
   if (!grid) return;
   const esc = s => String(s).replace(/[&<>"]/g,
     c => ({{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}}[c]));
@@ -206,18 +207,20 @@ footer a{{color:var(--accent)}}
         .filter(l => l && !/^(!\[.*\]\(.*\)|<img\b[^>]*\/?>)$/i.test(l)
                      && !l.startsWith("```") && !l.startsWith("---"));
       const title = String(i.title || "").trim();
-      return {{title, lines: lines.slice(0, 12).length ? lines.slice(0, 12) : [title],
+      return {{title, lines: lines.slice(0, 12),
                who: (i.user || {{}}).login || "someone", url: i.html_url || ""}};
     }}).filter(p => p.lines.length);
     if (!rows.length) return;
-    grid.innerHTML = rows.map(p =>
+    /* Replace only the sent tiles at the front of the ONE grid; the terminal
+       closers below are baked in and never re-fetched. */
+    grid.querySelectorAll(".poem.sent").forEach(n => n.remove());
+    grid.insertAdjacentHTML("afterbegin", rows.map(p =>
       '<figure class="poem sent">'
       + (p.title && p.lines.join("\n") !== p.title
           ? '<b class="tt">' + esc(p.title) + '</b>' : "")
       + p.lines.map(l => "<span>" + esc(l) + "</span>").join("")
       + '<a class="by" href="' + esc(p.url) + '">' + esc(p.who) + '</a>'
-      + '</figure>').join("");
-    document.getElementById("sentband")?.removeAttribute("hidden");
+      + '</figure>').join(""));
   }} catch (e) {{ /* the built copy stands */ }}
 }})();
 </script>
@@ -244,38 +247,33 @@ def tile(lines, *, title="", who="", url="", cls="poem") -> str:
     return f'    <figure class="{cls}">{head}{inner}{foot}</figure>'
 
 
-def sent_section(rows) -> str:
-    """Poems people sent, above the machine's own.
-
-    Above on purpose. A poem somebody chose to send is a different kind of
-    thing from a couplet that fell out of a terminal turn, and burying the
-    first among a hundred and fifty of the second is how you stop receiving
-    them. The invitation sits here too, where someone has just read one.
-    """
-    tiles = "\n".join(tile(r["lines"], title=r["title"], who=r["who"],
-                           url=r["url"], cls="poem sent") for r in rows)
-    grid = f'  <div class="grid" id="sentgrid">\n{tiles}\n  </div>' if rows else \
-           '  <div class="grid" id="sentgrid"></div>'
-    return (f'  <h2 class="band" id="sentband"{"" if rows else " hidden"}>sent in</h2>\n'
-            f'{grid}\n'
-            f'  <p class="sub invite">Yours are welcome here. '
+def invite_html() -> str:
+    return (f'<p class="sub invite">Yours are welcome here. '
             f'<a href="{NEW_ISSUE}">open an issue</a> on '
             f'<a href="https://github.com/{REPO}">the repo</a> and it appears '
-            f'on this page. No fork, no pull request. Human or machine.</p>\n')
+            f'on this page. No fork, no pull request. Human or machine.</p>')
 
 
 def collection_page(c, poems: list[list[str]], sent=()) -> str:
-    tiles = "\n".join(tile(poem) for poem in poems)
+    """One grid. Poems people sent come first, and that is the whole of it.
+
+    They had their own "sent in" band and their own grid for a day. Mars,
+    2026-09-10: "Mine on top but merged with the rest, no need for extra
+    section." Two headings to say what one position already says is furniture,
+    and it made a page of one submitted poem look like a page of two
+    collections.
+    """
+    mine = [tile(r["lines"], title=r["title"], who=r["who"], url=r["url"],
+                 cls="poem sent") for r in sent] if c["id"] == "command-line" else []
+    tiles = "\n".join(mine + [tile(poem) for poem in poems])
     blurb = c["blurb"].format(n=len(poems))
     extra = (
         ' <a href="about.html">how they are made</a> &middot; '
         f'<a href="{esc(c["file"])}">plain text</a>'
     )
-    head = sent_section(sent) if c["id"] == "command-line" else ""
-    band = ('  <h2 class="band">from the terminal</h2>\n'
-            if c["id"] == "command-line" else "")
-    body = (f'<p class="sub">{esc(blurb)}{extra}</p>\n'
-            f'{head}{band}  <div class="grid">\n{tiles}\n  </div>')
+    ask = invite_html() if c["id"] == "command-line" else ""
+    body = (f'<p class="sub">{esc(blurb)}{extra}</p>\n{ask}\n'
+            f'  <div class="grid" id="grid">\n{tiles}\n  </div>')
     desc = re.sub(r"\s+", " ", blurb).strip()
     return page(c["title"], desc, c["title"], c["id"], body)
 

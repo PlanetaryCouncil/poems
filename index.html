@@ -32,9 +32,6 @@ nav a.on{color:var(--accent);border-bottom-color:var(--accent)}
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}
 .poem:hover{border-color:var(--accent);transform:translateY(-2px)}
-.band{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--dim);margin:2.4rem 0 .9rem;border-bottom:1px solid var(--edge);
-  padding-bottom:.4rem;font-weight:500}
 .poem.sent{border-color:var(--accent)}
 .poem.sent .tt{color:var(--accent);font-weight:600;margin-bottom:.35rem}
 .poem .by{margin-top:.6rem;color:var(--dim);font-size:.78rem;
@@ -57,14 +54,9 @@ footer a{color:var(--accent)}
   <h1>haiku command line poems</h1>
   <nav><a href="/" class="on">command-line</a> · <a href="venus.html">venus</a> · <a href="about.html">about</a></nav>
   <p class="sub">Two lines at the end of a terminal reply. One per turn, written for the turn it closed, never reused. 152 of them. <a href="about.html">how they are made</a> &middot; <a href="haiku-command-line-poems.txt">plain text</a></p>
-  <h2 class="band" id="sentband">sent in</h2>
-  <div class="grid" id="sentgrid">
+<p class="sub invite">Yours are welcome here. <a href="https://github.com/PlanetaryCouncil/poems/issues/new">open an issue</a> on <a href="https://github.com/PlanetaryCouncil/poems">the repo</a> and it appears on this page. No fork, no pull request. Human or machine.</p>
+  <div class="grid" id="grid">
     <figure class="poem sent"><b class="tt">Merge and undo</b><span>STOP automerge to main -----&gt; I need to review changes</span><span>It then takes too much time to undo</span><a class="by" href="https://github.com/PlanetaryCouncil/poems/issues/4">marsrobertson</a></figure>
-    <figure class="poem sent"><span>Visual presentation</span><a class="by" href="https://github.com/PlanetaryCouncil/poems/issues/3">marsrobertson</a></figure>
-  </div>
-  <p class="sub invite">Yours are welcome here. <a href="https://github.com/PlanetaryCouncil/poems/issues/new">open an issue</a> on <a href="https://github.com/PlanetaryCouncil/poems">the repo</a> and it appears on this page. No fork, no pull request. Human or machine.</p>
-  <h2 class="band">from the terminal</h2>
-  <div class="grid">
     <figure class="poem"><span>Asked the mirror its own name.</span><span>It answered without blinking.</span></figure>
     <figure class="poem"><span>New hands on the same wheel.</span><span>The road doesn&#x27;t ask which.</span></figure>
     <figure class="poem"><span>The door was open all along.</span><span>Nobody wrote down who came in.</span></figure>
@@ -231,7 +223,7 @@ footer a{color:var(--accent)}
    this reads it directly -- no deploy step between writing one and seeing it.
    If the request fails, the built-in copy simply stays. */
 (async () => {
-  const grid = document.getElementById("sentgrid");
+  const grid = document.getElementById("grid");
   if (!grid) return;
   const esc = s => String(s).replace(/[&<>"]/g,
     c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -246,18 +238,20 @@ footer a{color:var(--accent)}
         .filter(l => l && !/^(!\[.*\]\(.*\)|<img\b[^>]*\/?>)$/i.test(l)
                      && !l.startsWith("```") && !l.startsWith("---"));
       const title = String(i.title || "").trim();
-      return {title, lines: lines.slice(0, 12).length ? lines.slice(0, 12) : [title],
+      return {title, lines: lines.slice(0, 12),
                who: (i.user || {}).login || "someone", url: i.html_url || ""};
     }).filter(p => p.lines.length);
     if (!rows.length) return;
-    grid.innerHTML = rows.map(p =>
+    /* Replace only the sent tiles at the front of the ONE grid; the terminal
+       closers below are baked in and never re-fetched. */
+    grid.querySelectorAll(".poem.sent").forEach(n => n.remove());
+    grid.insertAdjacentHTML("afterbegin", rows.map(p =>
       '<figure class="poem sent">'
       + (p.title && p.lines.join("\n") !== p.title
           ? '<b class="tt">' + esc(p.title) + '</b>' : "")
       + p.lines.map(l => "<span>" + esc(l) + "</span>").join("")
       + '<a class="by" href="' + esc(p.url) + '">' + esc(p.who) + '</a>'
-      + '</figure>').join("");
-    document.getElementById("sentband")?.removeAttribute("hidden");
+      + '</figure>').join(""));
   } catch (e) { /* the built copy stands */ }
 })();
 </script>
