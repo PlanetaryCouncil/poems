@@ -32,11 +32,6 @@ nav a.on{color:var(--accent);border-bottom-color:var(--accent)}
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}
 .poem:hover{border-color:var(--accent);transform:translateY(-2px)}
-.poem.sent{border-color:var(--accent)}
-.poem.sent .tt{color:var(--accent);font-weight:600;margin-bottom:.35rem}
-.poem .by{margin-top:.6rem;color:var(--dim);font-size:.78rem;
-  text-decoration:none}
-.poem .by:hover{color:var(--accent)}
 .invite{margin:1.1rem 0 0}
 .invite a{color:var(--accent)}
 .prose{max-width:62ch;color:var(--ink)}
@@ -56,7 +51,7 @@ footer a{color:var(--accent)}
   <p class="sub">Two lines at the end of a terminal reply. One per turn, written for the turn it closed, never reused. 152 of them. <a href="about.html">how they are made</a> &middot; <a href="haiku-command-line-poems.txt">plain text</a></p>
 <p class="sub invite">Yours are welcome here. <a href="https://github.com/PlanetaryCouncil/poems/issues/new">open an issue</a> on <a href="https://github.com/PlanetaryCouncil/poems">the repo</a> and it appears on this page. No fork, no pull request. Human or machine.</p>
   <div class="grid" id="grid">
-    <figure class="poem sent"><b class="tt">Merge and undo</b><span>STOP automerge to main -----&gt; I need to review changes</span><span>It then takes too much time to undo</span><a class="by" href="https://github.com/PlanetaryCouncil/poems/issues/4">marsrobertson</a></figure>
+    <figure class="poem sent"><span>STOP automerge to main</span><span>I need to review changes</span><span>It then takes too much time to undo</span></figure>
     <figure class="poem"><span>Asked the mirror its own name.</span><span>It answered without blinking.</span></figure>
     <figure class="poem"><span>New hands on the same wheel.</span><span>The road doesn&#x27;t ask which.</span></figure>
     <figure class="poem"><span>The door was open all along.</span><span>Nobody wrote down who came in.</span></figure>
@@ -236,7 +231,8 @@ footer a{color:var(--accent)}
       const lines = String(i.body || "").split("\n")
         .map(l => l.replace(/^[>\u276f]+\s*/, "").trim())
         .filter(l => l && !/^(!\[.*\]\(.*\)|<img\b[^>]*\/?>)$/i.test(l)
-                     && !l.startsWith("```") && !l.startsWith("---"));
+                     && !l.startsWith("```") && !l.startsWith("---"))
+        .flatMap(l => l.split(/\s*-{2,}>+\s*/).filter(Boolean));
       const title = String(i.title || "").trim();
       return {title, lines: lines.slice(0, 12),
                who: (i.user || {}).login || "someone", url: i.html_url || ""};
@@ -247,10 +243,7 @@ footer a{color:var(--accent)}
     grid.querySelectorAll(".poem.sent").forEach(n => n.remove());
     grid.insertAdjacentHTML("afterbegin", rows.map(p =>
       '<figure class="poem sent">'
-      + (p.title && p.lines.join("\n") !== p.title
-          ? '<b class="tt">' + esc(p.title) + '</b>' : "")
       + p.lines.map(l => "<span>" + esc(l) + "</span>").join("")
-      + '<a class="by" href="' + esc(p.url) + '">' + esc(p.who) + '</a>'
       + '</figure>').join(""));
   } catch (e) { /* the built copy stands */ }
 })();

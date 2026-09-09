@@ -52,6 +52,13 @@ NEW_ISSUE = f"https://github.com/{REPO}/issues/new"
 IMG_RE = re.compile(r"^(!\[.*?\]\(.*?\)|<img\b[^>]*/?>)$", re.I)
 
 
+# Mars writes "a ----> b" for "a, then b". On the page that is two lines, not
+# one long one: "STOP automerge to main -----> I need to review changes" reads
+# as a sentence with an arrow in it, and as two lines it reads as a poem.
+# Mars, 2026-09-10: "in 3 lines better".
+ARROW_RE = re.compile(r"\s*-{2,}>+\s*")
+
+
 def submitted() -> list[dict]:
     """Poems people sent, as open issues on this repo.
 
@@ -85,7 +92,7 @@ def submitted() -> list[dict]:
             ln = re.sub(r"^[>\u276f]+\s*", "", ln).strip()
             if not ln or IMG_RE.match(ln) or ln.startswith(("```", "---")):
                 continue
-            lines.append(ln)
+            lines.extend(x for x in ARROW_RE.split(ln) if x)
         title = str(i.get("title") or "").strip()
         # A title with no body is not a poem -- it is an issue about a poem.
         # "Visual presentation" was a screenshot with a heading, and rendering
@@ -157,11 +164,6 @@ nav a.on{{color:var(--accent);border-bottom-color:var(--accent)}}
   flex-direction:column;gap:.15rem;font-size:.95rem;line-height:1.55;
   transition:border-color .15s,transform .15s}}
 .poem:hover{{border-color:var(--accent);transform:translateY(-2px)}}
-.poem.sent{{border-color:var(--accent)}}
-.poem.sent .tt{{color:var(--accent);font-weight:600;margin-bottom:.35rem}}
-.poem .by{{margin-top:.6rem;color:var(--dim);font-size:.78rem;
-  text-decoration:none}}
-.poem .by:hover{{color:var(--accent)}}
 .invite{{margin:1.1rem 0 0}}
 .invite a{{color:var(--accent)}}
 .prose{{max-width:62ch;color:var(--ink)}}
@@ -205,7 +207,8 @@ footer a{{color:var(--accent)}}
       const lines = String(i.body || "").split("\n")
         .map(l => l.replace(/^[>\u276f]+\s*/, "").trim())
         .filter(l => l && !/^(!\[.*\]\(.*\)|<img\b[^>]*\/?>)$/i.test(l)
-                     && !l.startsWith("```") && !l.startsWith("---"));
+                     && !l.startsWith("```") && !l.startsWith("---"))
+        .flatMap(l => l.split(/\s*-{{2,}}>+\s*/).filter(Boolean));
       const title = String(i.title || "").trim();
       return {{title, lines: lines.slice(0, 12),
                who: (i.user || {{}}).login || "someone", url: i.html_url || ""}};
@@ -216,10 +219,7 @@ footer a{{color:var(--accent)}}
     grid.querySelectorAll(".poem.sent").forEach(n => n.remove());
     grid.insertAdjacentHTML("afterbegin", rows.map(p =>
       '<figure class="poem sent">'
-      + (p.title && p.lines.join("\n") !== p.title
-          ? '<b class="tt">' + esc(p.title) + '</b>' : "")
       + p.lines.map(l => "<span>" + esc(l) + "</span>").join("")
-      + '<a class="by" href="' + esc(p.url) + '">' + esc(p.who) + '</a>'
       + '</figure>').join(""));
   }} catch (e) {{ /* the built copy stands */ }}
 }})();
@@ -263,8 +263,12 @@ def collection_page(c, poems: list[list[str]], sent=()) -> str:
     and it made a page of one submitted poem look like a page of two
     collections.
     """
-    mine = [tile(r["lines"], title=r["title"], who=r["who"], url=r["url"],
-                 cls="poem sent") for r in sent] if c["id"] == "command-line" else []
+    # No title, no byline, no accent border. Mars, 2026-09-10: "skip header,
+    # skip signature, skip highlight ----> my poem integrated with the rest."
+    # The class stays only so the browser refresh can find its own tiles and
+    # replace them without touching the 152 baked-in closers.
+    mine = [tile(r["lines"], cls="poem sent")
+            for r in sent] if c["id"] == "command-line" else []
     tiles = "\n".join(mine + [tile(poem) for poem in poems])
     blurb = c["blurb"].format(n=len(poems))
     extra = (
